@@ -1,168 +1,157 @@
 # iac-terraform-mackenzie-cloud
-Repo para atividade de terraform para disciplina de cloud computing 
+Repositório para atividade em dupla de terraform da disciplina Cloud Computing -
 
-# 🚀 Infraestrutura HA WebApp – Terraform
+Professor: Yuri Rodrigues de Menezes  
 
-Este projeto provisiona uma arquitetura altamente disponível na AWS utilizando **VPC**, **sub-redes públicas**, **Load Balancer (ALB)**, **Auto Scaling Group (ASG)**, **EC2 Launch Template**, **Security Groups**, e integração com **Route 53**.
+Alunos: Higor Rodrigues de Oliveira - 10424019 | Lucas Braz Pereira - 10729862
 
-A solução foi pensada para cenários de **alta disponibilidade**, **escalabilidade automática** e **deploy simples** para aplicações web.
 
----
+## 🚀 Visão Geral
 
-## 📌 Arquitetura (Resumo)
-
-A infraestrutura criada segue esta estrutura:
-
-- **VPC**
-  - Sub-redes públicas em **2 AZs**
-  - Internet Gateway
-  - Route Table pública
-- **Security Groups**
-  - ALB: libera portas 80/443
-  - EC2: permite tráfego do ALB e SSH opcional
-- **Load Balancer (ALB)**
-  - Listener HTTP (80)
-  - (Opcional) Listener HTTPS (443)
-  - Target Group (EC2 Instances)
-- **Auto Scaling Group**
-  - Launch Template com user_data
-  - Escalonamento baseado em CPU
-- **Route 53**
-  - Registro A (Alias → ALB)
+Este projeto provisiona uma **infraestrutura altamente disponível e escalável na AWS** utilizando Terraform.
+A arquitetura implementa uma aplicação web distribuída entre **duas zonas de disponibilidade**, com **Auto Scaling**, **Load Balancer**, **Route 53** e **EC2**, garantindo resiliência, performance e custo otimizado.
 
 ---
 
-## 📁 Estrutura dos Arquivos
+![Imagem Arquitetura Atividade em Dupla](arquimage.png)
+
+## 🏗️ **Arquitetura Implementada**
+
+A infraestrutura cria os seguintes componentes:
+
+### 🔹 **Rede (VPC)**
+
+* 1 VPC dedicada
+* 2 Subnets Públicas (AZ A e AZ B)
+* Internet Gateway
+* Route Table pública
+
+### 🔹 **Segurança**
+
+* Security Group do ALB (porta 80 pública)
+* Security Group das EC2 (apenas tráfego do ALB + SSH opcional)
+
+### 🔹 **Compute**
+
+* Launch Template com instalação automática do Apache
+* Auto Scaling Group distribuído entre duas AZs
+* Capacidade inicial: 2 instâncias
+* Escalabilidade até 6 instâncias
+* Policy de autoscaling baseada em CPU
+
+### 🔹 **Balanceamento de Carga**
+
+* Application Load Balancer (ALB)
+* Listener na porta 80
+* Target Group com health checks
+
+### 🔹 **DNS – Route 53**
+
+* Criação de um registro tipo A com alias apontando para o ALB
+
+---
+
+## 📂 **Estrutura de Arquivos**
 
 ```
-
-.
+/
 ├── main.tf
 ├── variables.tf
 ├── outputs.tf
-├── user_data.sh
-└── README.md
-
-````
+└── README.md   👈 este documento
+```
 
 ---
 
-## 🧩 Pré-requisitos
+## ⚙️ **Pré-requisitos**
 
-- Terraform **>= 1.5**
-- AWS CLI configurado (`aws configure`)
-- Um domínio registrado no Route 53 (caso utilize o recurso de alias)
-- Uma AMI válida (ex: Amazon Linux 2 ou 2023)
+* Terraform ≥ **1.6.0**
+* AWS CLI configurado com credenciais válidas
+* Permissões para criar:
 
----
-
-## ⚙️ Variáveis Principais
-
-| Variável | Descrição | Default |
-|---------|-----------|---------|
-| `region` | Região AWS | `us-east-1` |
-| `vpc_cidr` | CIDR da VPC | `10.0.0.0/16` |
-| `public_subnet_a_cidr` | Sub-rede pública A | `10.0.1.0/24` |
-| `public_subnet_b_cidr` | Sub-rede pública B | `10.0.2.0/24` |
-| `ami_id` | ID da AMI | **obrigatória** |
-| `instance_type` | Tipo da EC2 | `t3.micro` |
-| `key_name` | Key Pair (SSH) | `null` |
-| `asg_min` | ASG mínimo | `2` |
-| `asg_max` | ASG máximo | `6` |
-| `asg_desired` | ASG desejado | `2` |
-| `cpu_target` | Target de CPU (%) | `50` |
-| `route53_zone_id` | Hosted Zone ID | **obrigatória** |
-| `route53_record_name` | Nome do domínio | **obrigatória** |
+  * VPC
+  * EC2
+  * ALB
+  * Route 53
+  * Auto Scaling
 
 ---
 
-## 🚀 Como Usar
+## 🔧 **Como Usar**
 
-### 1. Inicializar o Terraform
+### 1️⃣ **Inicializar o Terraform**
+
 ```sh
 terraform init
-````
+```
 
-### 2. Validar o código
+### 2️⃣ **Validar a infraestrutura**
 
 ```sh
 terraform validate
 ```
 
-### 3. Visualizar o plano de execução
+### 3️⃣ **Visualizar o plano**
 
 ```sh
 terraform plan
 ```
 
-### 4. Aplicar a infraestrutura
+### 4️⃣ **Criar a infraestrutura**
 
 ```sh
 terraform apply
 ```
 
----
+Após o apply, o Terraform exibirá os outputs, incluindo:
 
-## 🌐 Outputs
-
-| Output         | Descrição                                         |
-| -------------- | ------------------------------------------------- |
-| `alb_dns_name` | DNS público do Load Balancer                      |
-| `route53_fqdn` | FQDN configurado no Route 53 apontando para o ALB |
+* DNS do ALB
+* FQDN configurado no Route 53
+* Nome do projeto
 
 ---
 
-## 🔐 User Data
+## 🔑 **Variáveis Principais**
 
-O arquivo **user_data.sh** deve conter o script de inicialização da instância.
+As variáveis são definidas no arquivo **variables.tf**.
 
-Exemplo:
-
-```bash
-#!/bin/bash
-yum update -y
-yum install -y httpd
-systemctl enable httpd
-systemctl start httpd
-
-echo "<h1>Aplicação no ar!</h1>" > /var/www/html/index.html
-```
+| Variável              | Descrição                               | Exemplo                 |
+| --------------------- | --------------------------------------- | ------------------------|
+| `project_name`        | Nome base do projeto                    | `SiteArquProjeto`       |
+| `region`              | Região AWS                              | `us-east-1`             |
+| `ami_id`              | ID da AMI (Amazon Linux 2, por exemplo) | `ami-0866a3c8686eaeeba` |
+| `instance_type`       | Tipo da instância EC2                   | `t3.micro`              |
+| `asg_min`             | Capacidade mínima do ASG                | `2`                     |
+| `asg_max`             | Capacidade máxima                       | `6`                     |
+| `route53_record_name` | Domínio                                 | `SiteArquProjeto.com.br`|
 
 ---
 
-## 🔧 HTTPS (Opcional)
+## 📤 **Outputs Gerados**
 
-Para habilitar HTTPS:
+O arquivo **outputs.tf** entrega:
 
-1. Obtenha um certificado no ACM
-2. Preencha `acm_certificate_arn`
-3. Descomente o listener HTTPS no arquivo `main.tf`
+* `alb_dns_name` → endpoint público do ALB
+* `route53_fqdn` → FQDN configurado no Route 53
+* `project_name` → nome do projeto definido como variável
 
 ---
 
-## 🧨 Remover a infraestrutura
+## 🧱 **Fluxo de Requisição**
+
+1. Usuário acessa o domínio configurado.
+2. O Route 53 resolve e direciona para o ALB.
+3. O ALB distribui tráfego entre instâncias EC2 nas duas AZs.
+4. O ASG ajusta automaticamente a quantidade de instâncias conforme a carga.
+
+---
+
+## 🏁 **Destruir a Infraestrutura**
+
+Caso precise remover tudo:
 
 ```sh
 terraform destroy
 ```
 
 ---
-
-## 📜 Licença
-
-Código livre para uso em estudos, testes e produção. Ajuste conforme sua necessidade.
-
----
-
-```
-
----
-
-Se quiser, também posso gerar:
-
-✅ Uma versão reduzida  
-✅ Uma versão em inglês  
-✅ Um diagrama Mermaid para colocar dentro do README  
-
-É só pedir!
-```
