@@ -1,6 +1,7 @@
-variable tags {
+variable "tags" {
     description = "Tags aplicação"
-    default {
+    type        = map(string)
+    default = {
         Name = "SiteArquProjeto"
         EmailOwner = "higorro.oliveira@gmail.com"
         Environment = "Production Lab"

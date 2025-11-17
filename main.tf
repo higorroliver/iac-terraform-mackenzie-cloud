@@ -185,7 +185,8 @@ resource "aws_launch_template" "web" {
     yum install -y httpd
     systemctl enable httpd
     systemctl start httpd
-    echo "<html><h1>Bem-vindo ao meu site! Projeto Dupla Cloud Computing</h1></html>" > /var/www/html/index.html  EOT
+    echo "<html><h1>Bem-vindo ao meu site! Projeto Dupla Cloud Computing</h1></html>" > /var/www/html/index.html  
+  EOT
   )
 
   tag_specifications {
@@ -212,10 +213,15 @@ resource "aws_autoscaling_group" "web" {
     version = "$Latest"
   }
 
-  tag {
-    tags = var.tags
-    propagate_at_launch = true
+  dynamic "tag" {
+    for_each = var.tags
+    content {
+      key                 = "template-web"
+      value               = "${var.project_name}-web"
+      propagate_at_launch = true
+    }
   }
+
 
   lifecycle {
     create_before_destroy = true
@@ -246,5 +252,10 @@ resource "aws_route53_record" "app" {
   zone_id = aws_route53_zone.main.zone_id
   name    = "${var.project_name}-route-53"
   type    = "A"
-  evaluate_target_health = true
+
+  alias {
+    name                   = aws_lb.main.dns_name
+    zone_id                = aws_lb.main.zone_id
+    evaluate_target_health = true
+  }
 }
