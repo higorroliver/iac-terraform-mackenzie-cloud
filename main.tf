@@ -140,7 +140,7 @@ resource "aws_lb" "main" {
 }
 
 resource "aws_lb_target_group" "main" {
-  name_prefix = "${var.project_name}-tg-"
+  name_prefix = "loadtg"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -179,14 +179,15 @@ resource "aws_launch_template" "web" {
 
   vpc_security_group_ids = [aws_security_group.ec2.id]
 
-  user_data = <<-EOF
-              #!/bin/bash
-              apt-get update -y
-              apt-get install -y apache2
-              systemctl start apache2
-              systemctl enable apache2
-              echo "<html><h1>Bem-vindo ao meu site!</h1></html>" > /var/www/html/index.html
-              EOF
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y apache2
+    systemctl start apache2
+    systemctl enable apache2
+    echo "<html><h1>Bem-vindo ao meu site! Atividade em Dupla Cloud Computing</h1></html>" > /var/www/html/index.html
+  EOF
+  )
 
   tag_specifications {
     resource_type = "instance"
