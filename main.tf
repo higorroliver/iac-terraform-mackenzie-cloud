@@ -179,15 +179,14 @@ resource "aws_launch_template" "web" {
 
   vpc_security_group_ids = [aws_security_group.ec2.id]
 
-  user_data = base64encode(<<-EOT
-    #!/bin/bash
-    yum update -y
-    yum install -y httpd
-    systemctl enable httpd
-    systemctl start httpd
-    echo "<html><h1>Bem-vindo ao meu site! Projeto Dupla Cloud Computing</h1></html>" > /var/www/html/index.html  
-  EOT
-  )
+  user_data = <<-EOF
+              #!/bin/bash
+              apt-get update -y
+              apt-get install -y apache2
+              systemctl start apache2
+              systemctl enable apache2
+              echo "<html><h1>Bem-vindo ao meu site!</h1></html>" > /var/www/html/index.html
+              EOF
 
   tag_specifications {
     resource_type = "instance"
